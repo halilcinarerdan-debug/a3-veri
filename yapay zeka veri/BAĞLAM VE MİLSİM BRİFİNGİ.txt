@@ -1,0 +1,15 @@
+BAĞLAM VE MİLSİM BRİFİNGİ (CONTEXT):
+
+1. Milsim (Askeri Simülasyon) Nedir?: 
+Bu kod, gerçek askeri doktrinlerin, hiyerarşinin ve taktiklerin simüle edildiği bir Arma 3 Milsim topluluğunda kullanılacaktır. Oyuncular gerçekçi bir deneyim aramaktadır. Yapay zekanın (AI) "hile" yaparak oyuncuyu görmesi değil, mantıklı askeri manevralar (Doppler Kaçışı, Radar Gizliliği) yaparak oyuncuya meydan okuması hedeflenmektedir.
+
+2. Oyun ve Motor Altyapısı:
+Oyun Arma 3'tür ve Real Virtuality 4 oyun motorunu kullanmaktadır. Bu motor tek çekirdek performansına dayalıdır. Yazacağın kodun milisaniyeler bazında bile işlemciyi yormaması, sunucu tarafında (Server-side) FPS düşüşüne (Desync) sebep olmaması şarttır.
+
+3. Mod Bağımlılık Zinciri (Dependency Chain):
+Yazacağın kodun arka planda sorunsuz çalışması için şu mod yapısını ve bağımlılıklarını bilmelisin:
+- CBA_A3 (Community Base Addons): Oyunun temel mod altyapısıdır. Genişletilmiş Etkinlik Tetikleyicileri (Extended Event Handlers - XEH) sağlar. Performanslı kod yazmak için CBA fonksiyonlarını veya etkinliklerini kullanabilirsin.
+- ACE3 (Advanced Combat Environment): CBA_A3 moduna BAĞIMLIDIR (CBA olmadan çalışmaz). Oyunun tıbbi, balistik ve araç sistemlerini kökten değiştirir. Yazacağın radar kodu, ACE3'ün araç sensör etkileşimleriyle çelişmemelidir.
+- LAMBS_Danger.fsm: CBA_A3 moduna BAĞIMLIDIR. Kara birliklerinin ve piyadelerin taktiksel yapay zeka kararlarını (FSM) yöneter. Yazacağın hava savunma veya jet radar kodu, LAMBS'ın kara birimleri üzerindeki hareket döngülerini ezmemelidir.
+
+Bu bağımlılık hiyerarşisine sadık kalarak, modların birbirini ezmesini engelleyecek şekilde kod mimarisini oluştur.
