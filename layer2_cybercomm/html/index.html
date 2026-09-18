@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ShadowLine</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="app" class="hidden">
+    <div id="titlebar">
+        <div class="titlebar-row">
+            <div class="titlebar-left">
+                <span class="lock-icon">&#128274;</span>
+                <span class="channel-name" id="channelName">OPSEC :: Kanal-07</span>
+            </div>
+            <button id="closeBtn" class="close-btn" title="Kapat (ESC)">&times;</button>
+        </div>
+        <div class="titlebar-row titlebar-subrow">
+            <span class="encryption-badge">UCTAN UCA SIFRELI</span>
+            <div id="walletWidget" class="wallet-widget" title="Monero (XMR) Cuzdan Bakiyesi">
+                <span class="xmr-icon">&#625;</span>
+                <span id="walletBalance">0.0000</span>
+                <span class="wallet-currency">XMR</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="messageList" class="message-list"></div>
+
+    <div class="status-bar">
+        <span class="conn-dot online"></span>
+        <span id="statusText">Baglanti guvenli &middot; trafik anonimlestiriliyor...</span>
+    </div>
+</div>
+
+<div id="exifPanel" class="exif-panel hidden">
+    <div class="exif-header">
+        <span class="exif-title">ADLI METADATA ANALIZI</span>
+        <button id="exifCloseBtn" class="exif-close">&times;</button>
+    </div>
+    <div class="exif-body">
+        <div class="exif-section">
+            <h4>COGRAFI KONUM (GPS EXIF)</h4>
+            <div class="exif-row"><span class="exif-label">Enlem (Latitude):</span><span id="exifLat" class="exif-value mono"></span></div>
+            <div class="exif-row"><span class="exif-label">Boylam (Longitude):</span><span id="exifLon" class="exif-value mono"></span></div>
+            <div class="exif-row"><span class="exif-label">GPS Dogruluk Yaricapi:</span><span id="exifAccuracy" class="exif-value mono"></span></div>
+        </div>
+
+        <div class="exif-section">
+            <h4>CIHAZ BILGISI</h4>
+            <div class="exif-row"><span class="exif-label">Model:</span><span id="exifDevice" class="exif-value mono"></span></div>
+            <div class="exif-row"><span class="exif-label">IMEI Checksum:</span><span id="exifImei" class="exif-value mono"></span></div>
+            <div class="exif-row"><span class="exif-label">Cekim Zamani:</span><span id="exifTimestamp" class="exif-value mono"></span></div>
+        </div>
+
+        <div class="exif-section">
+            <h4>HAM VERI DOKUMU (RAW HEX DUMP)</h4>
+            <pre id="exifRawDump" class="exif-raw mono"></pre>
+        </div>
+
+        <div id="exifIntegrityWarning" class="exif-warning hidden">
+            &#9888; METADATA BUTUNLUGU SUPHELI &mdash; kaynak cihazda GPS/saat sapmasi tespit edildi. Koordinatlari dogrulamadan saha ekibine iletmeyin.
+        </div>
+
+        <p class="exif-hint">Koordinatlari harita veya GPS cihazina MANUEL olarak girmeniz gerekir. Otomatik isaretleme yoktur.</p>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
