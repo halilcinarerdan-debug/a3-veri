@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Reaktor Telemetri</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="scada" class="hidden">
+    <header class="scada-header">
+        <span class="title">ENDUSTRIYEL REAKTOR KONTROL UNITESI</span>
+        <span id="status-badge" class="status-badge status-idle">BEKLEMEDE</span>
+        <button id="btn-close">KAPAT</button>
+    </header>
+
+    <section class="gauge-row">
+        <div class="gauge">
+            <div class="gauge-label">SICAKLIK</div>
+            <div class="gauge-value" id="val-temp">--.- &deg;C</div>
+            <div class="gauge-bar"><div id="bar-temp" class="gauge-fill fill-temp"></div></div>
+        </div>
+        <div class="gauge">
+            <div class="gauge-label">BASINC</div>
+            <div class="gauge-value" id="val-pressure">---.- PSI</div>
+            <div class="gauge-bar"><div id="bar-pressure" class="gauge-fill fill-pressure"></div></div>
+        </div>
+        <div class="gauge">
+            <div class="gauge-label">pH DENGESI</div>
+            <div class="gauge-value" id="val-ph">-.--</div>
+            <div class="gauge-bar"><div id="bar-ph" class="gauge-fill fill-ph"></div></div>
+        </div>
+        <div class="gauge">
+            <div class="gauge-label">GAZ YOGUNLUGU</div>
+            <div class="gauge-value" id="val-ppm">-- PPM</div>
+            <div class="gauge-bar"><div id="bar-ppm" class="gauge-fill fill-ppm"></div></div>
+        </div>
+    </section>
+
+    <section class="control-row">
+        <div class="control-block">
+            <label for="valve-slider">SOGUTMA VALFI (%)</label>
+            <input type="range" id="valve-slider" min="0" max="100" value="0">
+            <span id="valve-value">0%</span>
+        </div>
+
+        <div class="control-block">
+            <label>EKIPMAN ASINMASI</label>
+            <div class="gauge-bar"><div id="bar-wear" class="gauge-fill fill-wear"></div></div>
+            <button id="btn-maintenance">BAKIM YAP (XMR)</button>
+        </div>
+
+        <div class="control-block">
+            <label>HAVALANDIRMA</label>
+            <button id="btn-ventilation" class="toggle-btn">KAPALI</button>
+        </div>
+    </section>
+
+    <section class="charge-row">
+        <div class="charge-block">
+            <label for="reagent-select">REAKTIF</label>
+            <select id="reagent-select">
+                <option value="reagent_precursor_x">Prekursor Bilesik-X</option>
+                <option value="reagent_amine_y">Amin Bilesik-Y</option>
+                <option value="reagent_catalyst_z">Metalik Katalizor-Z</option>
+                <option value="reagent_acid_w">Endustriyel Asit-W</option>
+            </select>
+            <input type="number" id="reagent-mass" placeholder="mg" min="1">
+            <button id="btn-charge">YUKLE</button>
+        </div>
+
+        <div class="charge-block action-block">
+            <button id="btn-start">SENTEZI BASLAT</button>
+            <button id="btn-finalize">URUNU TOPLA</button>
+        </div>
+    </section>
+
+    <footer class="log-line" id="log-line">SISTEM HAZIR.</footer>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
