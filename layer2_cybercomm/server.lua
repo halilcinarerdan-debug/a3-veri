@@ -7,6 +7,13 @@
       1) SIGINT MOBILE TRACKER   -> Packet_Leak_Ratio, sinyal avcisi, lockdown
       2) FORENSIC DECAY          -> latent_print_weight + fingerprint_id
       3) POLICE HONEYPOT + CRYPTO-CHALLENGE -> ele gecirilmis hat + parola dogrulama
+
+    Fiziksel katman: sunucu SADECE NE ZAMAN/NEREDE spawn/despawn olacagina
+    karar verir (yasam dongusu otoritesi). Aracin/pedin gercekten olusturulmasi,
+    surus AI'i ve silah/combat mantigi TAMAMEN client.lua'da (istemci tarafinda)
+    calisir. Bu ayrim, agir dunya-etkilesim natiflerinin (CreateVehicle,
+    CreatePed, TaskCombatPed vb.) sunucuyu degil, ilgili oyuncunun kendi
+    istemcisini mesgul etmesini saglar (0.00 MS resmon hedefi).
 ]]
 
 local Config = {
@@ -37,8 +44,6 @@ local Config = {
     LockdownDurationSeconds  = 45,
     HunterSpawnMinDistance   = 80.0,  -- oyuncunun ~80-100m yakininda dogar
     HunterSpawnMaxDistance   = 100.0,
-    HunterApproachStepMeters = 12.0,
-    HunterArrivalRadius      = 8.0,
 
     -- FORENSIC DECAY
     ForensicUndergroundThreshold = 60, -- adli sicil skoru bu degerin ustundeyse MariaDB eslesme bayragi
@@ -58,6 +63,12 @@ local PacketLeak        = {}   -- [src] = { ratio, lastAt } (SIGINT)
 local ActiveHunters     = {}   -- [src] = true (SIGINT)
 local LockdownState     = {}   -- [src] = true (SIGINT)
 local VerifiedChallenges = {}  -- [identifier..'|'..agentId] = true (CRYPTO-CHALLENGE)
+
+-- [src] = { [category] = { netId, netId, ... } } - en son spawn edilen fiziksel
+-- varliklarin (minibus/ped) network ID'leri. Oyuncu aniden ayrilirsa (crash,
+-- alt+f4) bu ID'ler uzerinden BASKA bir client'a "sil" komutu yayinlanarak
+-- sahipsiz kalan varliklarin bellek/dunya sizintisina donusmesi engellenir.
+local SpawnedEntities = {}
 
 -- ============================================================
 -- YARDIMCILAR
@@ -345,69 +356,65 @@ end
 
 local EvaluateLeakThresholds -- forward declare (StartSigintHunter/TriggerLockdown birbirini referans eder)
 
+--- Bir kategori icin en son kaydedilen fiziksel varlik kaydini temizler ve
+--- (varsa) ilgili client'a "sunucu artik bunlari takip etmiyor" bilgisini
+--- vermek yerine, sadece bookkeeping'i sifirlar - asil silme komutu ayri
+--- olarak (despawn event'i ile) ilgili client'a gonderilir.
+local function ForgetSpawnedEntities(src, category)
+    if SpawnedEntities[src] then
+        SpawnedEntities[src][category] = nil
+    end
+end
+
+local function DespawnHunter(src)
+    TriggerClientEvent('cybercomm:despawnHunterVehicle', src)
+    ForgetSpawnedEntities(src, 'hunter')
+end
+
 local function StartSigintHunter(src)
     if ActiveHunters[src] then return end
     ActiveHunters[src] = true
 
+    local ped = GetPlayerPed(src)
+    if ped == 0 then ActiveHunters[src] = nil return end
+
+    local origin = GetEntityCoords(ped)
+    local angle = math.random() * 2 * math.pi
+    local spawnDist = math.random(Config.HunterSpawnMinDistance, Config.HunterSpawnMaxDistance)
+    local spawnCoords = vector3(
+        origin.x + math.cos(angle) * spawnDist,
+        origin.y + math.sin(angle) * spawnDist,
+        origin.z
+    )
+
+    -- Fiziksel spawn karari + surus AI'i client.lua'ya devredilir (bkz. dosya
+    -- basi not). Sunucu sadece YASAM DONGUSUNU (ne zaman spawn/despawn) yonetir.
+    TriggerClientEvent('cybercomm:spawnHunterVehicle', src, { coords = spawnCoords })
+    TriggerClientEvent('cybercomm:sigintProximity', src, { active = true, intensity = 1.0 })
+
     CreateThread(function()
-        local ped = GetPlayerPed(src)
-        if ped == 0 then ActiveHunters[src] = nil return end
-
-        local origin = GetEntityCoords(ped)
-        local angle = math.random() * 2 * math.pi
-        local spawnDist = math.random(Config.HunterSpawnMinDistance, Config.HunterSpawnMaxDistance)
-        local vehicleCoords = vector3(
-            origin.x + math.cos(angle) * spawnDist,
-            origin.y + math.sin(angle) * spawnDist,
-            origin.z
-        )
-
         while ActiveHunters[src] do
-            Wait(2500)
+            Wait(3000)
 
             if LockdownState[src] then
                 ActiveHunters[src] = nil
+                DespawnHunter(src)
                 break
             end
 
             local currentPed = GetPlayerPed(src)
             if currentPed == 0 or not DoesEntityExist(currentPed) then
                 ActiveHunters[src] = nil
+                DespawnHunter(src)
                 break
             end
 
             local ratio = GetLeakRatio(src)
             if ratio < Config.LeakHunterThreshold then
-                -- Sinyal soguyor, avci vazgeciyor
+                -- Sinyal soguyor, avci vazgeciyor: fiziksel varliklar temizlenir.
                 ActiveHunters[src] = nil
                 TriggerClientEvent('cybercomm:sigintProximity', src, { active = false })
-                break
-            end
-
-            local playerCoords = GetEntityCoords(currentPed)
-            local dir  = playerCoords - vehicleCoords
-            local dist = #dir
-
-            if dist > 0.01 then
-                local step = math.min(dist, Config.HunterApproachStepMeters)
-                local norm = dir / dist
-                vehicleCoords = vehicleCoords + norm * step
-            end
-
-            local newDist   = #(playerCoords - vehicleCoords)
-            local intensity = 1.0 - math.min(1.0, newDist / Config.HunterSpawnMaxDistance)
-
-            TriggerClientEvent('cybercomm:sigintProximity', src, {
-                active   = true,
-                distance = newDist,
-                intensity = intensity,
-            })
-
-            if newDist <= Config.HunterArrivalRadius then
-                -- Minibus menzile girdi; fiili mudahale (ped/arac spawn, pusu vb.)
-                -- ayri bir sistemin (Katman 3 / polis tepki modulu) sorumlulugundadir.
-                TriggerEvent('sigint:hunterInRange', src, vehicleCoords)
-                ActiveHunters[src] = nil
+                DespawnHunter(src)
                 break
             end
         end
@@ -462,6 +469,40 @@ AddEventHandler('cybercomm:heartbeat', function()
     UiHeartbeat[src] = os.clock()
     BumpLeakRatio(src, Config.LeakHeartbeatGain)
     EvaluateLeakThresholds(src)
+end)
+
+-- Client, kendi spawn ettigi fiziksel varliklarin network ID'lerini burada
+-- kayit ettirir (bkz. client.lua NetworkRegisterEntities). Bu, sadece
+-- "oyuncu aniden ayrilirsa kim temizleyecek" sorusuna cevap vermek icindir;
+-- normal despawn akisinda (ratio dususu/lockdown) ayni client zaten kendi
+-- varliklarini temizler.
+RegisterServerEvent('cybercomm:registerSpawnedEntities')
+AddEventHandler('cybercomm:registerSpawnedEntities', function(category, netIds)
+    local src = source
+    if not src or src <= 0 then return end
+    if type(category) ~= 'string' or type(netIds) ~= 'table' then return end
+    SpawnedEntities[src] = SpawnedEntities[src] or {}
+    SpawnedEntities[src][category] = netIds
+end)
+
+RegisterServerEvent('cybercomm:unregisterSpawnedEntities')
+AddEventHandler('cybercomm:unregisterSpawnedEntities', function(category)
+    local src = source
+    if not src or src <= 0 then return end
+    if type(category) ~= 'string' then return end
+    ForgetSpawnedEntities(src, category)
+end)
+
+-- CIV-AMBUSH / ShotSpotter: client, pusu catismasinin basladigi ani bildirir.
+-- Harita/dispatch gorunumu ayri bir sistemin (Katman 3) sorumlulugundadir;
+-- burada sadece dogrulanmis (rate-limitli, tip kontrollu) tetikleyici
+-- yayinlanir.
+RegisterServerEvent('cybercomm:reportShotSpotter')
+AddEventHandler('cybercomm:reportShotSpotter', function(coords)
+    local src = source
+    if not IsRequestAllowed(src) then return end
+    if type(coords) ~= 'vector3' then return end
+    TriggerEvent('sigint:shotSpotterAlert', src, coords)
 end)
 
 -- ============================================================
@@ -698,8 +739,10 @@ AddEventHandler('cybercomm:claimDeadDrop', function(messageId)
         TriggerClientEvent('cybercomm:notify', src, {
             message = 'UYARI: Konum guvenli degildi. Bir sey ters gitti...',
         })
-        -- Fiili pusu/ped tepkisi ayri bir sistemin (Katman 3) sorumlulugundadir;
-        -- bu sadece tetikleyici sinyaldir.
+        -- Fiziksel pusu (NOOSE/SWAT spawn + saldiri) client.lua'da tetiklenir.
+        -- Yerel 'sigint:*' event'i ayrica baska sistemlerin (Katman 3, log,
+        -- dispatch) de tepki verebilmesi icin korunur.
+        TriggerClientEvent('cybercomm:triggerAmbush', src, { coords = drop.coords })
         TriggerEvent('sigint:civilianAmbushTriggered', src, drop.coords, drop.agentId)
         return
     end
@@ -723,6 +766,20 @@ AddEventHandler('playerDropped', function()
     PacketLeak[src]         = nil
     ActiveHunters[src]      = nil
     LockdownState[src]      = nil
+
+    -- Oyuncu aniden ayrilirsa (crash/alt+f4), kendi spawn ettigi fiziksel
+    -- varliklari (minibus, ped) artik temizleyecek bir client kalmaz. Bu
+    -- yuzden network ID'leri KALAN tum client'lara yayinlanir; hangisi o
+    -- entity'yi cozebiliyorsa siler (bkz. client.lua ForceDeleteNetworkEntities).
+    local owned = SpawnedEntities[src]
+    if owned then
+        for _, netIds in pairs(owned) do
+            if #netIds > 0 then
+                TriggerClientEvent('cybercomm:forceDeleteNetworkEntities', -1, netIds)
+            end
+        end
+        SpawnedEntities[src] = nil
+    end
 end)
 
 -- ============================================================
