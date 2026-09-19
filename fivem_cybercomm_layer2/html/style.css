@@ -1,0 +1,632 @@
+:root {
+    --bg-primary: #05070a;
+    --bg-panel: #0d1117;
+    --bg-bubble-agent: #101820;
+    --accent: #3ddc97;
+    --accent-warn: #ff4d4d;
+    --text-primary: #d7e1e8;
+    --text-secondary: #6b7785;
+    --border-subtle: #1e2733;
+    --mono-font: 'Consolas', 'Courier New', monospace;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    color: var(--text-primary);
+    overflow: hidden;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ============ ANA PENCERE ============ */
+
+#app {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 420px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-primary) 100%);
+    border-left: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+
+    /* ==== v1.4.0 GPU HARDWARE ACCELERATION ====
+       CEF'in bu paneli ayri bir compositor layer'ina tasimasini zorlar.
+       Boylece slide animasyonu CPU paint yerine GPU'da calisir (60fps). */
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+
+    /* Slide friction easing: yumusak hizlanma, yumusak durma */
+    transition:
+        transform 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity   0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* .hidden kaldirildigi anda keyframe animasyonu tetiklenir.
+   GPU layer zaten yukarida olusturuldugu icin ilk frame ANINDA hazir olur,
+   boylece "donma" yerine puruzsuz bir slide-in gorulur. */
+#app:not(.hidden) {
+    animation: appSlideIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes appSlideIn {
+    0% {
+        transform: translateX(100%) translateZ(0);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0) translateZ(0);
+        opacity: 1;
+    }
+}
+
+/* Erisilebilirlik: hareket hassasiyeti olan kullanicilar icin */
+@media (prefers-reduced-motion: reduce) {
+    #app,
+    #app:not(.hidden) {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+#titlebar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.titlebar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.titlebar-subrow {
+    justify-content: space-between;
+}
+
+.titlebar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.channel-name {
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.encryption-badge {
+    font-size: 9px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.wallet-widget {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--mono-font);
+    font-size: 13px;
+    background: rgba(61, 220, 151, 0.08);
+    border: 1px solid rgba(61, 220, 151, 0.35);
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: var(--accent);
+}
+
+.xmr-icon {
+    font-weight: 700;
+}
+
+.wallet-currency {
+    color: var(--text-secondary);
+    font-size: 10px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    color: var(--accent-warn);
+}
+
+/* ============ MESAJ LISTESI ============ */
+
+.message-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.message-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+    background: var(--border-subtle);
+    border-radius: 3px;
+}
+
+.msg {
+    background: var(--bg-bubble-agent);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 10px 12px;
+    max-width: 92%;
+    align-self: flex-start;
+}
+
+.msg-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.msg-sender {
+    font-weight: 600;
+    color: #9fb3c8;
+}
+
+p.msg-text {
+    font-size: 13.5px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* ============ FOTOGRAF (ZULA) MESAJI ============ */
+
+.msg-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.msg-caption {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text-primary);
+}
+
+.exif-btn,
+.claim-btn {
+    align-self: flex-start;
+    font-family: var(--mono-font);
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.exif-btn {
+    background: rgba(61, 220, 151, 0.08);
+    border: 1px solid rgba(61, 220, 151, 0.4);
+    color: var(--accent);
+}
+
+.exif-btn:hover {
+    background: rgba(61, 220, 151, 0.18);
+}
+
+.claim-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid #3a4655;
+    color: var(--text-primary);
+}
+
+.claim-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #05070a;
+}
+
+.claimed-badge {
+    align-self: flex-start;
+    font-family: var(--mono-font);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    border: 1px dashed var(--border-subtle);
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+
+/* ============ CRYPTO-CHALLENGE CUBUGU ============ */
+
+.challenge-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border-subtle);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.challenge-input {
+    flex: 1;
+    min-width: 0;
+    background: #0b0f14;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 7px 9px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--mono-font);
+}
+
+.challenge-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.challenge-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.challenge-send-btn {
+    flex-shrink: 0;
+    background: rgba(61, 220, 151, 0.12);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 11px;
+    font-family: var(--mono-font);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.challenge-send-btn:hover {
+    background: rgba(61, 220, 151, 0.24);
+}
+
+/* ============ KATMAN 4 :: ILLEGAL GPS NAVIGASYON TERMINALI ============ */
+
+.gps-terminal {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 16px 12px;
+    border-top: 1px solid var(--border-subtle);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.gps-terminal-header {
+    display: flex;
+    align-items: center;
+}
+
+.gps-terminal-title {
+    font-family: var(--mono-font);
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #4de0ff;
+}
+
+.gps-terminal-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gps-label {
+    flex-shrink: 0;
+    width: 52px;
+    font-family: var(--mono-font);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.gps-input {
+    flex: 1;
+    min-width: 0;
+    background: #0b0f14;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 6px 9px;
+    color: #4de0ff;
+    font-size: 12px;
+}
+
+.gps-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.gps-input:focus {
+    outline: none;
+    border-color: #4de0ff;
+}
+
+.gps-terminal-actions {
+    margin-top: 2px;
+    justify-content: space-between;
+}
+
+.gps-route-btn {
+    flex-shrink: 0;
+    background: rgba(77, 224, 255, 0.12);
+    border: 1px solid #4de0ff;
+    color: #4de0ff;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 11px;
+    font-family: var(--mono-font);
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.gps-route-btn:hover {
+    background: rgba(77, 224, 255, 0.24);
+}
+
+.gps-terminal-status {
+    flex: 1;
+    text-align: right;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gps-terminal-status.gps-status-error {
+    color: var(--accent-warn);
+}
+
+.gps-send-btn {
+    align-self: flex-start;
+    margin-top: 4px;
+    font-family: var(--mono-font);
+    font-size: 10.5px;
+    letter-spacing: 0.3px;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    background: rgba(77, 224, 255, 0.08);
+    border: 1px solid rgba(77, 224, 255, 0.4);
+    color: #4de0ff;
+    transition: background 0.15s ease;
+}
+
+.gps-send-btn:hover {
+    background: rgba(77, 224, 255, 0.18);
+}
+
+/* ============ DURUM CUBUGU ============ */
+
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border-subtle);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.conn-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+}
+
+.conn-dot.online {
+    animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ============ SIGINT LOCKDOWN OVERLAY ============ */
+
+.lockdown-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 7, 10, 0.94);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    padding: 24px;
+    z-index: 60;
+
+    /* Overlay icin de GPU izolasyonu */
+    will-change: opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.lockdown-title {
+    font-family: var(--mono-font);
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    color: var(--accent-warn);
+    animation: glitchFlicker 0.8s infinite;
+}
+
+.lockdown-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+    max-width: 280px;
+}
+
+.lockdown-timer {
+    font-family: var(--mono-font);
+    font-size: 26px;
+    color: #ffffff;
+    letter-spacing: 2px;
+}
+
+@keyframes glitchFlicker {
+    0%, 80%, 100% { opacity: 1; text-shadow: none; }
+    83% { opacity: 0.85; text-shadow: 1px 0 var(--accent-warn); }
+    86% { opacity: 1; text-shadow: -1px 0 #4de0ff; }
+}
+
+/* ============ EXIF ADLI ANALIZ PANELI ============ */
+
+.exif-panel {
+    position: fixed;
+    top: 6%;
+    left: 50%;
+    transform: translateX(-50%) translateZ(0);
+    width: 480px;
+    max-height: 82%;
+    background: #070a0d;
+    border: 1px solid rgba(61, 220, 151, 0.3);
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 50;
+
+    /* EXIF paneli icin de GPU layer izolasyonu */
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform-style: preserve-3d;
+}
+
+.exif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(61, 220, 151, 0.08);
+    border-bottom: 1px solid rgba(61, 220, 151, 0.25);
+}
+
+.exif-title {
+    font-family: var(--mono-font);
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--accent);
+}
+
+.exif-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.exif-body {
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.exif-section h4 {
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    border-bottom: 1px dashed var(--border-subtle);
+    padding-bottom: 4px;
+    font-weight: 600;
+}
+
+.exif-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12.5px;
+    padding: 3px 0;
+}
+
+.exif-label {
+    color: var(--text-secondary);
+}
+
+.exif-value.mono {
+    font-family: var(--mono-font);
+    color: var(--text-primary);
+    text-align: right;
+}
+
+.exif-raw {
+    font-family: var(--mono-font);
+    font-size: 11px;
+    line-height: 1.5;
+    background: #000;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 10px;
+    color: #6bffb0;
+    overflow-x: auto;
+    white-space: pre;
+}
+
+.exif-warning {
+    background: rgba(255, 77, 77, 0.1);
+    border: 1px solid rgba(255, 77, 77, 0.4);
+    color: #ff9b9b;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+}
+
+.exif-hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
