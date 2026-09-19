@@ -1,73 +1,116 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ShadowLine</title>
-<link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <title>ShadowLine</title>
+
+    <!--
+        DIKKAT:
+        - 'type="text/css"' MUTLAKA belirtilmeli. CEF bazi surumlerde
+          tip belirtilmeyen link'i yok sayip dosyayi inline render ediyor.
+        - 'href' ui_page'in bulundugu klasore GORE relatif olmali.
+          ui_page = 'html/index.html' ise href = 'style.css' dogru yoldur.
+          Basta egik cizgi KULLANMA (/style.css -> resource kok'unu arar).
+    -->
+    <link rel="stylesheet" type="text/css" href="style.css" />
 </head>
 <body>
 
-<div id="app" class="hidden">
-    <div id="titlebar">
-        <div class="titlebar-row">
-            <div class="titlebar-left">
-                <span class="lock-icon">&#128274;</span>
-                <span class="channel-name" id="channelName">OPSEC :: Kanal-07</span>
+    <div id="app" class="hidden">
+        <div id="titlebar">
+            <div class="titlebar-row">
+                <div class="titlebar-left">
+                    <span class="lock-icon">&#128274;</span>
+                    <span class="channel-name" id="channelName">OPSEC :: Kanal-07</span>
+                </div>
+                <button id="closeBtn" class="close-btn" title="Kapat (ESC)">&times;</button>
             </div>
-            <button id="closeBtn" class="close-btn" title="Kapat (ESC)">&times;</button>
-        </div>
-        <div class="titlebar-row titlebar-subrow">
-            <span class="encryption-badge">UCTAN UCA SIFRELI</span>
-            <div id="walletWidget" class="wallet-widget" title="Monero (XMR) Cuzdan Bakiyesi">
-                <span class="xmr-icon">&#625;</span>
-                <span id="walletBalance">0.0000</span>
-                <span class="wallet-currency">XMR</span>
+            <div class="titlebar-row titlebar-subrow">
+                <span class="encryption-badge">UCTAN UCA SIFRELI</span>
+                <div id="walletWidget" class="wallet-widget" title="Monero (XMR) Cuzdan Bakiyesi">
+                    <span class="xmr-icon">&#625;</span>
+                    <span id="walletBalance">0.0000</span>
+                    <span class="wallet-currency">XMR</span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="messageList" class="message-list"></div>
+        <div id="messageList" class="message-list"></div>
 
-    <div class="status-bar">
-        <span class="conn-dot online"></span>
-        <span id="statusText">Baglanti guvenli &middot; trafik anonimlestiriliyor...</span>
-    </div>
-</div>
-
-<div id="exifPanel" class="exif-panel hidden">
-    <div class="exif-header">
-        <span class="exif-title">ADLI METADATA ANALIZI</span>
-        <button id="exifCloseBtn" class="exif-close">&times;</button>
-    </div>
-    <div class="exif-body">
-        <div class="exif-section">
-            <h4>COGRAFI KONUM (GPS EXIF)</h4>
-            <div class="exif-row"><span class="exif-label">Enlem (Latitude):</span><span id="exifLat" class="exif-value mono"></span></div>
-            <div class="exif-row"><span class="exif-label">Boylam (Longitude):</span><span id="exifLon" class="exif-value mono"></span></div>
-            <div class="exif-row"><span class="exif-label">GPS Dogruluk Yaricapi:</span><span id="exifAccuracy" class="exif-value mono"></span></div>
+        <!--
+            CRYPTO-CHALLENGE: oyuncunun aktif ajana gizli bir guvenlik ifadesi
+            (parola) gonderdigi mini panel. Dogru/yanlis diye bir gosterge
+            YOKTUR - oyuncu cevabi okuyarak kendisi degerlendirir.
+        -->
+        <div id="challengeBar" class="challenge-bar">
+            <input
+                id="challengeInput"
+                class="challenge-input"
+                type="text"
+                maxlength="80"
+                placeholder="Guvenlik ifadesi gonder (parola dogrulama)..."
+                autocomplete="off"
+            />
+            <button id="challengeSendBtn" class="challenge-send-btn">Gonder</button>
         </div>
 
-        <div class="exif-section">
-            <h4>CIHAZ BILGISI</h4>
-            <div class="exif-row"><span class="exif-label">Model:</span><span id="exifDevice" class="exif-value mono"></span></div>
-            <div class="exif-row"><span class="exif-label">IMEI Checksum:</span><span id="exifImei" class="exif-value mono"></span></div>
-            <div class="exif-row"><span class="exif-label">Cekim Zamani:</span><span id="exifTimestamp" class="exif-value mono"></span></div>
+        <div class="status-bar">
+            <span class="conn-dot online"></span>
+            <span id="statusText">Baglanti guvenli &middot; trafik anonimlestiriliyor...</span>
         </div>
 
-        <div class="exif-section">
-            <h4>HAM VERI DOKUMU (RAW HEX DUMP)</h4>
-            <pre id="exifRawDump" class="exif-raw mono"></pre>
+        <!--
+            SIGINT MOBILE TRACKER: Packet_Leak_Ratio %95'i gectiginde sunucu
+            bu overlay'i tetikler. Arayuz gecici olarak islevsiz kalir.
+        -->
+        <div id="lockdownOverlay" class="lockdown-overlay hidden">
+            <span class="lockdown-title">SIBER ENGELLEME AKTIF</span>
+            <span class="lockdown-sub">Sinyal izole ediliyor. Baglanti gecici olarak kilitlendi.</span>
+            <span id="lockdownTimer" class="lockdown-timer">00:00</span>
         </div>
-
-        <div id="exifIntegrityWarning" class="exif-warning hidden">
-            &#9888; METADATA BUTUNLUGU SUPHELI &mdash; kaynak cihazda GPS/saat sapmasi tespit edildi. Koordinatlari dogrulamadan saha ekibine iletmeyin.
-        </div>
-
-        <p class="exif-hint">Koordinatlari harita veya GPS cihazina MANUEL olarak girmeniz gerekir. Otomatik isaretleme yoktur.</p>
     </div>
-</div>
 
-<script src="script.js"></script>
+    <div id="exifPanel" class="exif-panel hidden">
+        <div class="exif-header">
+            <span class="exif-title">ADLI METADATA ANALIZI</span>
+            <button id="exifCloseBtn" class="exif-close">&times;</button>
+        </div>
+        <div class="exif-body">
+            <div class="exif-section">
+                <h4>COGRAFI KONUM (GPS EXIF)</h4>
+                <div class="exif-row"><span class="exif-label">Enlem (Latitude):</span><span id="exifLat" class="exif-value mono"></span></div>
+                <div class="exif-row"><span class="exif-label">Boylam (Longitude):</span><span id="exifLon" class="exif-value mono"></span></div>
+                <div class="exif-row"><span class="exif-label">GPS Dogruluk Yaricapi:</span><span id="exifAccuracy" class="exif-value mono"></span></div>
+            </div>
+
+            <div class="exif-section">
+                <h4>CIHAZ BILGISI</h4>
+                <div class="exif-row"><span class="exif-label">Model:</span><span id="exifDevice" class="exif-value mono"></span></div>
+                <div class="exif-row"><span class="exif-label">IMEI Checksum:</span><span id="exifImei" class="exif-value mono"></span></div>
+                <div class="exif-row"><span class="exif-label">Cekim Zamani:</span><span id="exifTimestamp" class="exif-value mono"></span></div>
+            </div>
+
+            <div class="exif-section">
+                <h4>HAM VERI DOKUMU (RAW HEX DUMP)</h4>
+                <pre id="exifRawDump" class="exif-raw mono"></pre>
+            </div>
+
+            <div id="exifIntegrityWarning" class="exif-warning hidden">
+                &#9888; METADATA BUTUNLUGU SUPHELI &mdash; kaynak cihazda GPS/saat sapmasi tespit edildi. Koordinatlari dogrulamadan saha ekibine iletmeyin.
+            </div>
+
+            <p class="exif-hint">Koordinatlari harita veya GPS cihazina MANUEL olarak girmeniz gerekir. Otomatik isaretleme yoktur.</p>
+        </div>
+    </div>
+
+    <!--
+        'defer': DOM parse bittikten SONRA script calisir.
+        qs('#app') gibi sorgularin patlamamasini garantiler.
+    -->
+    <script src="script.js" defer></script>
 </body>
 </html>

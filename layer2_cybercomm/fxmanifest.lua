@@ -2,26 +2,33 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
+name 'layer2_cybercomm'
 author 'A3-Veri :: Suc ve Istihbarat Simulasyonu'
-description 'Katman 2 - Siber Suc Haberlesme Arayuzu (NUI) ve EXIF/Metadata Adli Analiz Motoru'
-version '1.0.0'
+description 'Katman 2 - Siber Suc Haberlesme Arayuzu (NUI), EXIF/Metadata Analiz Motoru, SIGINT Takip ve Adli Sahtekarlik Tespiti'
+version '1.2.0'
 
--- Standalone: hicbir framework (QBCore/ESX/vRP) bagimliligi yoktur.
--- Katman 1 (MariaDB / Kortizol-Biyometri motoru) ile export uzerinden,
--- gevsek baglanti (loose coupling) kurar. Bkz. server.lua > Config.Layer1ResourceName
-
-client_scripts {
-    'client.lua'
-}
-
-server_scripts {
-    'server.lua'
-}
-
+-- ============================================================
+-- NUI KONFIGURASYONU
+-- ============================================================
+-- ui_page MUTLAKA resource kok dizininden baslamali.
+-- ONEMLI: Bu yol ile asagidaki 'files' icindeki yol BIREBIR ayni olmali.
 ui_page 'html/index.html'
 
+-- NUI'nin ihtiyac duydugu HER dosya burada listelenmek ZORUNDA.
+-- Buyuk-kucuk harf duyarlidir (Linux). Uzanti ile birlikte tam yaz.
 files {
     'html/index.html',
     'html/style.css',
-    'html/script.js'
+    'html/script.js',
+}
+
+-- ============================================================
+-- SCRIPT KATMANLARI
+-- ============================================================
+client_scripts {
+    'client.lua',
+}
+
+server_scripts {
+    'server.lua',
 }

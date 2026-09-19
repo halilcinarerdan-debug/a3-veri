@@ -144,7 +144,7 @@ html, body {
     border-radius: 3px;
 }
 
-.message {
+.msg {
     background: var(--bg-bubble-agent);
     border: 1px solid var(--border-subtle);
     border-radius: 10px;
@@ -153,7 +153,7 @@ html, body {
     align-self: flex-start;
 }
 
-.message-meta {
+.msg-meta {
     display: flex;
     justify-content: space-between;
     gap: 10px;
@@ -162,98 +162,124 @@ html, body {
     margin-bottom: 6px;
 }
 
-.sender-name {
+.msg-sender {
     font-weight: 600;
     color: #9fb3c8;
 }
 
-.message-text {
+p.msg-text {
     font-size: 13.5px;
     line-height: 1.4;
     white-space: pre-wrap;
     word-break: break-word;
 }
 
-.message.degraded {
-    border-color: rgba(255, 77, 77, 0.4);
-}
+/* ============ FOTOGRAF (ZULA) MESAJI ============ */
 
-.message.degraded .message-text {
-    color: #ffb4b4;
-    animation: glitchFlicker 2.4s infinite;
-}
-
-@keyframes glitchFlicker {
-    0%, 92%, 100% { opacity: 1; text-shadow: none; }
-    93% { opacity: 0.85; text-shadow: 1px 0 var(--accent-warn); }
-    94% { opacity: 1; text-shadow: -1px 0 #4de0ff; }
-}
-
-/* ============ FOTOGRAF (ZULA) BALONU ============ */
-
-.photo-message {
+.msg-body {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
-.photo-frame {
-    position: relative;
-    height: 140px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: radial-gradient(circle at 30% 20%, #1c2530, #05070a 70%);
-    border: 1px solid var(--border-subtle);
-    cursor: pointer;
+.msg-caption {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text-primary);
 }
 
-.photo-noise {
-    position: absolute;
-    inset: 0;
-    background-image: repeating-linear-gradient(
-        0deg,
-        rgba(255, 255, 255, 0.02) 0px,
-        rgba(255, 255, 255, 0.02) 1px,
-        transparent 1px,
-        transparent 3px
-    );
-    opacity: 0.6;
-}
-
-.photo-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    background: rgba(0, 0, 0, 0.35);
-    color: var(--text-secondary);
+.exif-btn,
+.claim-btn {
+    align-self: flex-start;
+    font-family: var(--mono-font);
     font-size: 11px;
-    transition: background 0.2s ease, color 0.2s ease;
-    text-align: center;
-    padding: 0 10px;
+    letter-spacing: 0.3px;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 
-.photo-frame:hover .photo-overlay {
-    background: rgba(0, 0, 0, 0.55);
+.exif-btn {
+    background: rgba(61, 220, 151, 0.08);
+    border: 1px solid rgba(61, 220, 151, 0.4);
     color: var(--accent);
 }
 
-.photo-icon {
-    font-size: 26px;
+.exif-btn:hover {
+    background: rgba(61, 220, 151, 0.18);
 }
 
-.photo-label {
+.claim-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid #3a4655;
+    color: var(--text-primary);
+}
+
+.claim-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #05070a;
+}
+
+.claimed-badge {
+    align-self: flex-start;
     font-family: var(--mono-font);
+    font-size: 10px;
     letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    border: 1px dashed var(--border-subtle);
+    border-radius: 6px;
+    padding: 4px 8px;
 }
 
-.message-caption {
-    font-size: 12.5px;
+/* ============ CRYPTO-CHALLENGE CUBUGU ============ */
+
+.challenge-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border-subtle);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.challenge-input {
+    flex: 1;
+    min-width: 0;
+    background: #0b0f14;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 7px 9px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--mono-font);
+}
+
+.challenge-input::placeholder {
     color: var(--text-secondary);
-    padding: 0 2px;
+}
+
+.challenge-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.challenge-send-btn {
+    flex-shrink: 0;
+    background: rgba(61, 220, 151, 0.12);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 11px;
+    font-family: var(--mono-font);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.challenge-send-btn:hover {
+    background: rgba(61, 220, 151, 0.24);
 }
 
 /* ============ DURUM CUBUGU ============ */
@@ -284,6 +310,49 @@ html, body {
 @keyframes pulseDot {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
+}
+
+/* ============ SIGINT LOCKDOWN OVERLAY ============ */
+
+.lockdown-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 7, 10, 0.94);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    padding: 24px;
+    z-index: 60;
+}
+
+.lockdown-title {
+    font-family: var(--mono-font);
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    color: var(--accent-warn);
+    animation: glitchFlicker 0.8s infinite;
+}
+
+.lockdown-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+    max-width: 280px;
+}
+
+.lockdown-timer {
+    font-family: var(--mono-font);
+    font-size: 26px;
+    color: #ffffff;
+    letter-spacing: 2px;
+}
+
+@keyframes glitchFlicker {
+    0%, 80%, 100% { opacity: 1; text-shadow: none; }
+    83% { opacity: 0.85; text-shadow: 1px 0 var(--accent-warn); }
+    86% { opacity: 1; text-shadow: -1px 0 #4de0ff; }
 }
 
 /* ============ EXIF ADLI ANALIZ PANELI ============ */
